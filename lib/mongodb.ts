@@ -34,7 +34,15 @@ async function connectToDatabase(): Promise<typeof mongoose> {
     }
 
     // Create a single connection promise so repeated calls share the same work.
-    cachedConnection.promise = mongoose.connect(uri, options);
+    cachedConnection.promise = (async () => {
+      if (!uri) {
+        throw new Error(
+          "Please define the MONGODB_URI environment variable inside .env.local"
+        );
+      }
+
+      return mongoose.connect(uri, options);
+    })();
   }
 
   try {
