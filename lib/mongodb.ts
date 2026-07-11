@@ -1,8 +1,8 @@
 import mongoose, { type ConnectOptions } from "mongoose";
 
 type MongooseCache = {
-  conn: typeof mongoose | null;
-  promise: Promise<typeof mongoose> | null;
+  conn: mongoose.Mongoose | null;
+  promise: Promise<mongoose.Mongoose> | null;
 };
 
 const globalWithMongoose = globalThis as typeof globalThis & {
@@ -15,8 +15,13 @@ const cachedConnection = globalWithMongoose.mongooseCache ??= {
   promise: null,
 };
 
-async function connectToDatabase(): Promise<typeof mongoose> {
+async function connectToDatabase(): Promise<mongoose.Mongoose> {
   if (cachedConnection.conn) {
+    return cachedConnection.conn;
+  }
+
+  if (mongoose.connection.readyState === 1) {
+    cachedConnection.conn = mongoose;
     return cachedConnection.conn;
   }
 

@@ -1,10 +1,4 @@
-import mongoose, {
-  Schema,
-  model,
-  models,
-  type Document,
-  type Types,
-} from "mongoose";
+import mongoose, { Schema, model, models, type Document } from "mongoose";
 
 export interface IEvent extends Document {
   title: string;
@@ -188,7 +182,7 @@ function normalizeTime(value: string): string {
   return `${String(normalizedHours).padStart(2, "0")}:${minutes} ${period}`;
 }
 
-eventSchema.pre("save", function (next) {
+eventSchema.pre("save", async function (this: mongoose.Document & IEvent) {
   // Generate a URL-friendly slug from the title when it is first set or changed.
   if (this.isModified("title")) {
     this.slug = slugify(this.title);
@@ -203,7 +197,33 @@ eventSchema.pre("save", function (next) {
     this.time = normalizeTime(this.time);
   }
 
-  next();
+  // Normalize tags: convert string to array and trim each tag
+  if (this.isModified("tags")) {
+    if (typeof this.tags === "string") {
+      this.tags = (this.tags as unknown as string)
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    } else if (Array.isArray(this.tags)) {
+      this.tags = this.tags
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+    }
+  }
+
+  // Normalize agenda: convert string to array and trim each item
+  if (this.isModified("agenda")) {
+    if (typeof this.agenda === "string") {
+      this.agenda = (this.agenda as unknown as string)
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+    } else if (Array.isArray(this.agenda)) {
+      this.agenda = this.agenda
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+    }
+  }
 });
 
 export const Event =

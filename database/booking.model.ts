@@ -35,9 +35,8 @@ const bookingSchema = new Schema<IBooking>(
 );
 
 // Ensure the referenced event exists before the booking is saved.
-bookingSchema.pre("save", async function (next) {
+bookingSchema.pre("save", async function (this: mongoose.Document & IBooking) {
   if (!this.isModified("eventId")) {
-    next();
     return;
   }
 
@@ -45,11 +44,8 @@ bookingSchema.pre("save", async function (next) {
   const event = await EventModel.findById(this.eventId).lean<IEvent | null>().exec();
 
   if (!event) {
-    next(new Error("Referenced event does not exist."));
-    return;
+    throw new Error("Referenced event does not exist.");
   }
-
-  next();
 });
 
 export const Booking =
